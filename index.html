@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLUTE Project Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0f14;
+  --surface: #13161d;
+  --surface2: #1a1e28;
+  --surface3: #222635;
+  --border: #2a2e3d;
+  --border2: #353a50;
+  --text: #e8eaf0;
+  --text2: #9199b0;
+  --text3: #5a6180;
+  --accent: #5b7fff;
+  --accent2: #3d5fdf;
+  --high: #ff5c5c;
+  --high-bg: rgba(255,92,92,0.1);
+  --medium: #ffb347;
+  --medium-bg: rgba(255,179,71,0.1);
+  --low: #4ecb8d;
+  --low-bg: rgba(78,203,141,0.1);
+  --done: #4ecb8d;
+  --inprog: #5b7fff;
+  --radius: 8px;
+  --radius2: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 13px; }
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+.logo span { color: var(--accent); }
+.nav-tabs { display: flex; gap: 4px; }
+.nav-tab { padding: 7px 14px; border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--text2); cursor: pointer; font-family: 'DM Mono', monospace; font-size: 12px; transition: all 0.15s; }
+.nav-tab:hover { background: var(--surface2); color: var(--text); }
+.nav-tab.active { background: var(--surface3); border-color: var(--border2); color: var(--text); }
+
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+/* CONNECTION BANNER */
+.conn-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: var(--radius);
+  background: var(--surface2); border: 1px solid var(--border);
+  font-size: 11px; color: var(--text2);
+}
+.conn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+.conn-dot.connected { background: var(--done); box-shadow: 0 0 6px var(--done); }
+.conn-dot.error { background: var(--high); }
+.conn-dot.loading { background: var(--medium); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.btn { padding: 7px 14px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--surface2); color: var(--text); cursor: pointer; font-family: 'DM Mono', monospace; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; }
+.btn:hover { background: var(--surface3); border-color: var(--accent); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+.btn-danger { background: rgba(255,92,92,0.12); border-color: rgba(255,92,92,0.3); color: var(--high); }
+.btn-danger:hover { background: rgba(255,92,92,0.2); }
+
+.main { display: flex; flex: 1; overflow: hidden; }
+.content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.page { display: none; }
+.page.active { display: block; }
+.page-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 20px; }
+
+/* SETUP PANEL */
+.setup-panel {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius2);
+  padding: 28px 32px;
+  max-width: 640px;
+  margin: 40px auto;
+}
+.setup-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.setup-sub { color: var(--text2); font-size: 12px; margin-bottom: 24px; line-height: 1.6; }
+.setup-step { display: flex; gap: 14px; margin-bottom: 18px; align-items: flex-start; }
+.step-num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.step-body { flex: 1; }
+.step-title { font-weight: 500; margin-bottom: 4px; }
+.step-desc { color: var(--text2); font-size: 11px; line-height: 1.7; }
+.step-desc code { background: var(--surface3); padding: 1px 5px; border-radius: 3px; color: var(--accent); font-family: 'DM Mono', monospace; font-size: 11px; }
+.url-input-row { display: flex; gap: 8px; margin-top: 8px; }
+.url-input-row input { flex: 1; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+/* DASHBOARD */
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius2); padding: 16px; position: relative; overflow: hidden; }
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.stat-card.high::before { background: var(--high); }
+.stat-card.medium::before { background: var(--medium); }
+.stat-card.low::before { background: var(--low); }
+.stat-card.done::before { background: var(--done); }
+.stat-card.total::before { background: var(--accent); }
+.stat-card.overdue::before { background: #ff5c5c; }
+.stat-num { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+.stat-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+.section-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 14px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.section-title .badge { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 400; background: var(--surface3); border: 1px solid var(--border2); padding: 2px 8px; border-radius: 99px; color: var(--text2); }
+.month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.month-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius2); padding: 14px; }
+.month-name { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+.month-stat { display: flex; justify-content: space-between; font-size: 11px; color: var(--text2); margin-bottom: 5px; }
+.month-stat span:last-child { color: var(--text); }
+.progress-bar { height: 4px; background: var(--surface3); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+
+/* TASK TABLE */
+.toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+.search-box { flex: 1; min-width: 180px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; }
+.search-box:focus { outline: none; border-color: var(--accent); }
+.search-box::placeholder { color: var(--text3); }
+select { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 10px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; }
+select:focus { outline: none; border-color: var(--accent); }
+select option { background: var(--surface2); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 12px; text-align: left; color: var(--text2); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; cursor: pointer; user-select: none; }
+thead th:hover { color: var(--text); }
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+tbody tr:hover { background: var(--surface); }
+tbody td { padding: 10px 12px; vertical-align: middle; }
+.task-id { color: var(--text3); font-size: 11px; }
+.task-title { color: var(--text); font-weight: 500; max-width: 280px; }
+.task-phase { color: var(--text2); font-size: 11px; }
+.badge-priority, .badge-status { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+.badge-priority.High { background: var(--high-bg); color: var(--high); border: 1px solid rgba(255,92,92,0.2); }
+.badge-priority.Medium { background: var(--medium-bg); color: var(--medium); border: 1px solid rgba(255,179,71,0.2); }
+.badge-priority.Low { background: var(--low-bg); color: var(--low); border: 1px solid rgba(78,203,141,0.2); }
+.badge-status.Completed,.badge-status.Done { background: rgba(78,203,141,0.1); color: var(--done); border: 1px solid rgba(78,203,141,0.2); }
+.badge-status.In-Progress { background: rgba(91,127,255,0.1); color: var(--inprog); border: 1px solid rgba(91,127,255,0.2); }
+.badge-status.Not-Started { background: rgba(90,97,128,0.1); color: var(--text3); border: 1px solid rgba(90,97,128,0.2); }
+.badge-status.Blocked { background: rgba(255,92,92,0.1); color: var(--high); border: 1px solid rgba(255,92,92,0.2); }
+.badge-status.Deferred { background: rgba(255,179,71,0.1); color: var(--medium); border: 1px solid rgba(255,179,71,0.2); }
+.progress-cell { min-width: 90px; }
+.progress-track { height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; margin-top: 3px; }
+.progress-inner { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.prog-val { font-size: 10px; color: var(--text2); }
+.action-btn { padding: 4px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface2); color: var(--text2); cursor: pointer; font-size: 11px; font-family: 'DM Mono', monospace; transition: all 0.1s; }
+.action-btn:hover { border-color: var(--accent); color: var(--text); }
+.overdue-row { background: rgba(255,92,92,0.04) !important; }
+.overdue-row:hover { background: rgba(255,92,92,0.08) !important; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius2); width: 100%; max-width: 680px; max-height: 92vh; overflow-y: auto; animation: slideUp 0.2s ease; }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 14px; border-bottom: 1px solid var(--border); }
+.modal-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; }
+.modal-close { background: none; border: none; color: var(--text2); font-size: 20px; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: all 0.1s; }
+.modal-close:hover { background: var(--surface2); color: var(--text); }
+.modal-body { padding: 18px 22px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.4px; }
+input[type="text"], input[type="date"], input[type="number"], textarea, .form-select { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; transition: border-color 0.15s; width: 100%; }
+input:focus, textarea:focus, .form-select:focus { outline: none; border-color: var(--accent); }
+textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.range-row { display: flex; align-items: center; gap: 10px; }
+.range-row input { flex: 1; }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 14px 22px 18px; border-top: 1px solid var(--border); }
+
+/* WEEKLY */
+.week-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.week-label { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; flex: 1; }
+.week-cols { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+.day-col { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius2); padding: 10px; min-height: 120px; }
+.day-name { font-size: 11px; color: var(--text2); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.4px; }
+.day-date { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; margin-bottom: 10px; }
+.day-col.today { border-color: var(--accent); }
+.day-col.today .day-date { color: var(--accent); }
+.day-task { background: var(--surface2); border-left: 2px solid var(--accent); border-radius: 4px; padding: 5px 7px; margin-bottom: 5px; font-size: 10px; cursor: pointer; transition: background 0.1s; }
+.day-task:hover { background: var(--surface3); }
+.day-task.high { border-left-color: var(--high); }
+.day-task.medium { border-left-color: var(--medium); }
+.day-task.low { border-left-color: var(--low); }
+
+/* MONTHLY */
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.cal-header { text-align: center; font-size: 11px; color: var(--text3); text-transform: uppercase; padding: 6px 0; letter-spacing: 0.4px; }
+.cal-day { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; min-height: 70px; padding: 6px; }
+.cal-day.other-month { opacity: 0.3; }
+.cal-day.today { border-color: var(--accent); }
+.cal-day-num { font-size: 12px; font-weight: 500; margin-bottom: 4px; color: var(--text2); }
+.cal-day.today .cal-day-num { color: var(--accent); font-weight: 700; }
+.cal-task-dot { display: flex; align-items: center; gap: 4px; font-size: 9px; color: var(--text2); margin-bottom: 2px; cursor: pointer; }
+.dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.dot.high { background: var(--high); } .dot.medium { background: var(--medium); } .dot.low { background: var(--low); }
+
+/* RISKS */
+.risk-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius2); padding: 14px 16px; margin-bottom: 10px; }
+.risk-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.risk-id { font-size: 11px; color: var(--text3); }
+.risk-title { font-weight: 500; font-size: 13px; flex: 1; }
+.risk-body { font-size: 11px; color: var(--text2); line-height: 1.6; }
+
+/* LOADING OVERLAY */
+.loading-overlay { position: fixed; inset: 0; background: rgba(13,15,20,0.85); z-index: 200; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+.loading-overlay.show { display: flex; }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-msg { color: var(--text2); font-size: 13px; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface3); border: 1px solid var(--border2); border-radius: var(--radius); padding: 12px 18px; color: var(--text); font-size: 12px; z-index: 999; animation: fadeInUp 0.2s ease; display: none; }
+.toast.show { display: block; }
+@keyframes fadeInUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+@media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } .week-cols { grid-template-columns: repeat(2,1fr); } header { gap: 8px; } .content { padding: 14px; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">BLUTE<span>.</span>track</div>
+    <nav class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('dashboard',this)">Dashboard</button>
+      <button class="nav-tab" onclick="showPage('tasks',this)">All Tasks</button>
+      <button class="nav-tab" onclick="showPage('weekly',this)">Weekly</button>
+      <button class="nav-tab" onclick="showPage('monthly',this)">Monthly</button>
+      <button class="nav-tab" onclick="showPage('risks',this)">Risks</button>
+      <button class="nav-tab" onclick="showPage('setup',this)">⚙ Setup</button>
+    </nav>
+    <div class="header-right">
+      <div class="conn-bar">
+        <div class="conn-dot" id="connDot"></div>
+        <span id="connLabel">Not connected</span>
+      </div>
+      <button class="btn" onclick="syncNow()" id="syncBtn" title="Sync with Google Sheets">↺ Sync</button>
+      <button class="btn btn-primary" onclick="openModal()">+ New Task</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="content">
+
+      <!-- SETUP PAGE -->
+      <div id="page-setup" class="page">
+        <div class="setup-panel">
+          <div class="setup-title">Connect to Google Sheets</div>
+          <div class="setup-sub">Your data will be stored permanently in a Google Sheet you own — free, accessible from any device or browser.</div>
+
+          <div class="setup-step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">Create a Google Sheet</div>
+              <div class="step-desc">Go to <a href="https://sheets.google.com" target="_blank" style="color:var(--accent)">sheets.google.com</a> → create a new spreadsheet → name it <code>BLUTE Task Tracker</code></div>
+            </div>
+          </div>
+
+          <div class="setup-step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">Open Apps Script</div>
+              <div class="step-desc">In your sheet → click <code>Extensions</code> → <code>Apps Script</code> → delete all existing code → paste the <code>apps_script.gs</code> file contents provided → click <strong>Save</strong> (Ctrl+S)</div>
+            </div>
+          </div>
+
+          <div class="setup-step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <div class="step-title">Deploy as Web App</div>
+              <div class="step-desc">
+                Click <code>Deploy</code> → <code>New deployment</code><br>
+                Type: <code>Web app</code><br>
+                Execute as: <code>Me</code><br>
+                Who has access: <code>Anyone</code><br>
+                Click <strong>Deploy</strong> → authorize when prompted → copy the <strong>Web App URL</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="setup-step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <div class="step-title">Paste your Web App URL below</div>
+              <div class="step-desc">It looks like: <code>https://script.google.com/macros/s/AKfycb.../exec</code></div>
+              <div class="url-input-row">
+                <input type="text" id="webAppUrl" placeholder="https://script.google.com/macros/s/.../exec" style="font-size:11px;">
+                <button class="btn btn-primary" onclick="saveAndConnect()">Connect</button>
+              </div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn" onclick="testConnection()">Test Connection</button>
+            <button class="btn btn-primary" onclick="seedToSheets()" id="seedBtn" disabled>Seed All 50 Tasks to Sheet</button>
+            <button class="btn btn-danger" onclick="clearUrl()">Disconnect</button>
+          </div>
+          <div id="setupStatus" style="margin-top:14px;font-size:12px;color:var(--text2);"></div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <div class="page-title">Project Dashboard</div>
+        <div class="dash-grid" id="statsGrid"></div>
+        <div class="section-title">Monthly Breakdown</div>
+        <div class="month-grid" id="monthBreakdown"></div>
+        <div class="section-title">Recent Updates <span class="badge" id="recentBadge">0</span></div>
+        <div id="recentTasks"></div>
+      </div>
+
+      <!-- ALL TASKS -->
+      <div id="page-tasks" class="page">
+        <div class="page-title">Task Register</div>
+        <div class="toolbar">
+          <input class="search-box" id="searchBox" placeholder="Search tasks, IDs, owners…" oninput="renderTasks()">
+          <select id="filterPriority" onchange="renderTasks()">
+            <option value="">All Priorities</option>
+            <option>High</option><option>Medium</option><option>Low</option>
+          </select>
+          <select id="filterStatus" onchange="renderTasks()">
+            <option value="">All Statuses</option>
+            <option>Not Started</option><option>In Progress</option>
+            <option>Completed</option><option>Blocked</option><option>Deferred</option>
+          </select>
+          <select id="filterPhase" onchange="renderTasks()">
+            <option value="">All Phases</option>
+            <option>Phase 0</option><option>Phase 1A</option><option>Phase 1B</option><option>Launch</option>
+          </select>
+          <select id="filterMonth" onchange="renderTasks()">
+            <option value="">All Months</option>
+            <option>Mar-2026</option><option>Apr-2026</option><option>May-2026</option>
+            <option>Jun-2026</option><option>Jul-2026</option><option>Aug-2026</option>
+            <option>Sep-2026</option><option>Oct-2026</option>
+          </select>
+          <button class="btn" onclick="exportCSV()">↓ CSV</button>
+          <button class="btn" onclick="exportJSON()">↓ JSON</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sortBy('taskId')">ID</th>
+                <th onclick="sortBy('title')">Task</th>
+                <th onclick="sortBy('phase')">Phase</th>
+                <th onclick="sortBy('assignee')">Assignee</th>
+                <th onclick="sortBy('priority')">Priority</th>
+                <th onclick="sortBy('status')">Status</th>
+                <th onclick="sortBy('startDate')">Start</th>
+                <th onclick="sortBy('endDate')">End</th>
+                <th onclick="sortBy('actualDate')">Actual</th>
+                <th onclick="sortBy('progress')">Progress</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="taskBody"></tbody>
+          </table>
+        </div>
+        <div id="taskCount" style="margin-top:10px;color:var(--text3);font-size:11px;"></div>
+      </div>
+
+      <!-- WEEKLY -->
+      <div id="page-weekly" class="page">
+        <div class="page-title">Weekly View</div>
+        <div class="week-nav">
+          <button class="btn" onclick="prevWeek()">← Prev</button>
+          <div class="week-label" id="weekLabel"></div>
+          <button class="btn" onclick="nextWeek()">Next →</button>
+          <button class="btn" onclick="goToday()">Today</button>
+        </div>
+        <div class="week-cols" id="weekCols"></div>
+      </div>
+
+      <!-- MONTHLY -->
+      <div id="page-monthly" class="page">
+        <div class="page-title">Monthly Calendar</div>
+        <div class="week-nav">
+          <button class="btn" onclick="prevMonth()">← Prev</button>
+          <div class="week-label" id="monthLabel"></div>
+          <button class="btn" onclick="nextMonth()">Next →</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+
+      <!-- RISKS -->
+      <div id="page-risks" class="page">
+        <div class="page-title">Risks & Mitigations</div>
+        <div id="riskList"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeOnOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">New Task</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Task ID</label>
+          <input type="text" id="f_taskId">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phase</label>
+          <select id="f_phase" class="form-select">
+            <option>Phase 0</option><option>Phase 1A</option><option>Phase 1B</option><option>Launch</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Task Title *</label>
+          <input type="text" id="f_title">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Workstream</label>
+          <input type="text" id="f_workstream">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Primary Owner Role</label>
+          <input type="text" id="f_ownerRole">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assignee</label>
+          <input type="text" id="f_assignee">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select id="f_priority" class="form-select">
+            <option>High</option><option>Medium</option><option>Low</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select id="f_status" class="form-select">
+            <option>Not Started</option><option>In Progress</option>
+            <option>Completed</option><option>Blocked</option><option>Deferred</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Start Date</label>
+          <input type="date" id="f_startDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Date (Planned)</label>
+          <input type="date" id="f_endDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Actual Completion Date</label>
+          <input type="date" id="f_actualDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Progress % <span id="progressDisplay" style="color:var(--accent)">0%</span></label>
+          <div class="range-row">
+            <input type="range" id="f_progress" min="0" max="100" value="0" oninput="updateProgressDisplay(this.value)">
+          </div>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Milestone / Deliverable</label>
+          <input type="text" id="f_milestone">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Dependencies</label>
+          <input type="text" id="f_deps" placeholder="e.g. T001, T005">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Notes / Description</label>
+          <textarea id="f_notes" placeholder="Additional notes, context, blockers…"></textarea>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Risk if Late</label>
+          <input type="text" id="f_risk">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" id="deleteBtn" onclick="deleteTask()" style="display:none">Delete</button>
+      <button class="btn btn-primary" onclick="saveTask()" id="saveTaskBtn">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-msg" id="loadingMsg">Syncing with Google Sheets…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== SEED DATA ====================
+const SEED = [
+  {taskId:'T001',phase:'Phase 0',workstream:'Strategy',title:'Freeze ICP, geography, buyer band, and Phase 1 boundary',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-03-18',endDate:'2026-03-20',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Scope lock memo approved',deps:'',notes:'',risk:'Scope creep and bad-fit supply'},
+  {taskId:'T002',phase:'Phase 0',workstream:'Commercial',title:'Lock revenue model and commission calculator',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-03-18',endDate:'2026-03-21',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Single commercial model version signed',deps:'T001',notes:'',risk:'Trust damage from contradictions'},
+  {taskId:'T003',phase:'Phase 0',workstream:'Finance',title:'Build budget, burn tracker, and runway view',ownerRole:'CEO + CA',assignee:'TBD',startDate:'2026-03-18',endDate:'2026-03-22',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Weekly burn tracker live',deps:'T002',notes:'',risk:'Cash blindness before launch'},
+  {taskId:'T004',phase:'Phase 0',workstream:'Corporate',title:'Prepare company registration filing for April 1',ownerRole:'CEO + CA',assignee:'TBD',startDate:'2026-03-18',endDate:'2026-03-28',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Filing pack complete',deps:'T003',notes:'',risk:'Company setup delay cascades into all ops'},
+  {taskId:'T005',phase:'Phase 0',workstream:'Legal',title:'Draft seller, buyer, agent, and developer MoUs',ownerRole:'CEO + Title Documentation Partner',assignee:'TBD',startDate:'2026-03-19',endDate:'2026-03-29',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'v1 legal pack ready for review',deps:'T002',notes:'',risk:'No enforceable operating rails'},
+  {taskId:'T006',phase:'Phase 0',workstream:'Legal + Finance',title:'Resolve token / payment SOP into one final version',ownerRole:'CEO + Title Documentation Partner + CA',assignee:'TBD',startDate:'2026-03-20',endDate:'2026-03-28',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Single signed SOP + payment templates',deps:'T005',notes:'',risk:'Legal and trust failure in live deals'},
+  {taskId:'T007',phase:'Phase 0',workstream:'Legal',title:'Empanel 2 plotted-land legal partners with SLA',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-03-24',endDate:'2026-03-31',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'2 lawyers onboarded with 72-hour title SLA',deps:'T005',notes:'',risk:'Verification bottleneck'},
+  {taskId:'T008',phase:'Phase 0',workstream:'Corporate',title:'Draft cap table, ESOP/advisor terms, and founder structure',ownerRole:'CEO + CA',assignee:'TBD',startDate:'2026-03-24',endDate:'2026-03-31',actualDate:'',priority:'Medium',status:'Not Started',progress:'0',milestone:'Structure document ready',deps:'T004',notes:'',risk:'Investor prep remains weak'},
+  {taskId:'T009',phase:'Phase 0',workstream:'Corporate',title:'Complete Pvt Ltd, GST, and bank stack',ownerRole:'CEO + CA',assignee:'TBD',startDate:'2026-04-01',endDate:'2026-04-07',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Company and banking stack live',deps:'T004',notes:'',risk:'No operational legitimacy'},
+  {taskId:'T010',phase:'Phase 0',workstream:'People',title:'Finalize role map and JDs for Operations Lead, Buyer Success Manager, Marketing',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-04-01',endDate:'2026-04-05',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'JD pack approved',deps:'T001',notes:'',risk:'Hiring slips into June/July'},
+  {taskId:'T011',phase:'Phase 0',workstream:'Brand',title:'Freeze brand kit, tone guide, and messaging architecture',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-04-01',endDate:'2026-04-12',actualDate:'',priority:'Medium',status:'Not Started',progress:'0',milestone:'Brand foundation locked',deps:'T001',notes:'',risk:'Inconsistent market-facing language'},
+  {taskId:'T012',phase:'Phase 0',workstream:'Compliance',title:"Freeze promise / don't-promise guardrails",ownerRole:'CEO + Title Documentation Partner',assignee:'TBD',startDate:'2026-04-05',endDate:'2026-04-15',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Messaging guardrails signed',deps:'T005,T011',notes:'',risk:'Mis-selling exposure'},
+  {taskId:'T013',phase:'Phase 0',workstream:'Operations',title:'Finalize SOP stack, tools map, and tracker architecture',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-04-05',endDate:'2026-04-25',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Ops stack v1 live',deps:'T001,T006',notes:'',risk:'No single source of truth'},
+  {taskId:'T014',phase:'Phase 0',workstream:'Enablement',title:'Build buyer, seller, and agent onboarding kits',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-04-10',endDate:'2026-04-24',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'3 onboarding packs finalized',deps:'T011,T012,T013',notes:'',risk:'Weak field consistency'},
+  {taskId:'T015',phase:'Phase 0',workstream:'Sales Enablement',title:'Build scripts, FAQs, objection bank, and disclosure pack',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-04-20',endDate:'2026-04-30',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Script library ready',deps:'T014',notes:'',risk:'Discovery and seller conversations become inconsistent'},
+  {taskId:'T016',phase:'Phase 0',workstream:'Digital',title:'Launch website, forms, and lead capture workflow',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-04-10',endDate:'2026-04-30',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Website live + forms tested',deps:'T011,T012',notes:'',risk:'No credible front door'},
+  {taskId:'T017',phase:'Phase 0',workstream:'Supply',title:'Developer outreach: 10 targets and 5 meetings',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-05-01',endDate:'2026-05-20',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'5 meetings completed',deps:'T016',notes:'',risk:'Supply pipeline starts late'},
+  {taskId:'T018',phase:'Phase 0',workstream:'Supply',title:'Sign first 3 developer MoUs',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-05-10',endDate:'2026-05-31',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'3 MoUs signed',deps:'T017,T005',notes:'',risk:'No verified supply engine'},
+  {taskId:'T019',phase:'Phase 0',workstream:'Supply Ops',title:'Push first 10 properties through intake and folder creation',ownerRole:'Venture Onboarding Associate',assignee:'TBD',startDate:'2026-05-10',endDate:'2026-05-31',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'10 properties opened in tracker',deps:'T018,T013',notes:'',risk:'June verification has no raw material'},
+  {taskId:'T020',phase:'Phase 0',workstream:'Verification',title:'First 5 legal reviews to Green status',ownerRole:'Title Documentation Partner + Property Verification Specialist',assignee:'TBD',startDate:'2026-05-15',endDate:'2026-05-31',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'5 properties reach Green with field proof + legal gap closure',deps:'T019,T007',notes:'',risk:'June buyer/agent work gets blocked'},
+  {taskId:'T021',phase:'Phase 0',workstream:'Partners',title:'Empanel media / Decision Kit vendor and bank RM channel',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-05-15',endDate:'2026-05-31',actualDate:'',priority:'Medium',status:'Not Started',progress:'0',milestone:'Vendor and bank channel confirmed',deps:'T016',notes:'',risk:'Later asset and loan coordination delays'},
+  {taskId:'T022',phase:'Phase 0',workstream:'Demand Validation',title:'Run test ads and baseline CAC/CPL learning',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-05-20',endDate:'2026-05-31',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Baseline channel economics captured',deps:'T016',notes:'',risk:'June demand engine starts blind'},
+  {taskId:'T023',phase:'Phase 0',workstream:'People',title:'Shortlist and issue offers for Operations Lead and Buyer Success Manager',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-05-20',endDate:'2026-05-31',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'2 offers accepted',deps:'T010',notes:'',risk:'June start slips'},
+  {taskId:'T024',phase:'Phase 1A',workstream:'People',title:'Onboard Operations Lead through 2-week SOP immersion',ownerRole:'CEO + Operations Lead',assignee:'TBD',startDate:'2026-06-01',endDate:'2026-06-14',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Operations Lead runs tracker and flow independently',deps:'T023,T013',notes:'',risk:'CEO remains bottleneck'},
+  {taskId:'T025',phase:'Phase 1A',workstream:'People',title:'Onboard Buyer Success Manager through supervised discovery flow',ownerRole:'CEO + Operations Lead',assignee:'TBD',startDate:'2026-06-01',endDate:'2026-06-14',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Buyer Success Manager handles discovery and logging',deps:'T023,T015',notes:'',risk:'Demand-side movement is founder-dependent'},
+  {taskId:'T026',phase:'Phase 1A',workstream:'Governance',title:'Start weekly war room, KPI review, and bypass audit rhythm',ownerRole:'CEO + Operations Lead',assignee:'TBD',startDate:'2026-06-01',endDate:'2026-10-01',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Weekly review rhythm never missed',deps:'T024',notes:'',risk:'Drift and hidden failures'},
+  {taskId:'T027',phase:'Phase 1A',workstream:'Supply',title:'Expand property pipeline to 15',ownerRole:'Operations Lead',assignee:'TBD',startDate:'2026-06-01',endDate:'2026-06-30',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'15 properties in pipeline',deps:'T024,T019',notes:'',risk:'July targets become impossible'},
+  {taskId:'T028',phase:'Phase 1A',workstream:'Verification',title:'Send 10 files to legal and reach 8 Green by June 30',ownerRole:'Operations Lead + Venture Onboarding Associate + Title Documentation Partner',assignee:'TBD',startDate:'2026-06-10',endDate:'2026-06-30',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'8 Green properties',deps:'T027',notes:'',risk:'No credible buyer/agent inventory'},
+  {taskId:'T029',phase:'Phase 1A',workstream:'Agent Network',title:'Recruit wave 1: screen 30, shortlist 20',ownerRole:'Channel Onboarding Specialist + Operations Lead',assignee:'TBD',startDate:'2026-06-01',endDate:'2026-06-30',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'20 shortlisted for July training',deps:'T015,T024',notes:'',risk:'July certification target breaks'},
+  {taskId:'T030',phase:'Phase 1A',workstream:'Demand',title:'Start local buyer pipeline and lead tracking',ownerRole:'Buyer Success Manager + Operations Lead',assignee:'TBD',startDate:'2026-06-10',endDate:'2026-06-30',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Qualified local pipeline live',deps:'T025,T022',notes:'',risk:'No evidence-led GTM learning'},
+  {taskId:'T031',phase:'Phase 1A',workstream:'Ops Tech',title:'Make OTP, Gate Pass, and visit-proof workflow live',ownerRole:'Operations Lead',assignee:'TBD',startDate:'2026-06-01',endDate:'2026-06-07',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'OTP→Gate Pass→Visit proof chain active',deps:'T024,T013',notes:'',risk:'Anti-bypass system is fake'},
+  {taskId:'T032',phase:'Phase 1A',workstream:'Training',title:'Run 2 training sessions for agent cohort',ownerRole:'Trainer (PT) + Channel Onboarding Specialist',assignee:'TBD',startDate:'2026-07-01',endDate:'2026-07-14',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Training delivered and recorded',deps:'T029',notes:'',risk:'No professional field force'},
+  {taskId:'T033',phase:'Phase 1A',workstream:'Training',title:'Certification exam and 10 agent certifications',ownerRole:'Trainer (PT) + Operations Lead',assignee:'TBD',startDate:'2026-07-08',endDate:'2026-07-20',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'10 certified agents',deps:'T032',notes:'',risk:'Launch network not ready'},
+  {taskId:'T034',phase:'Phase 1A',workstream:'Agent Network',title:'Activate agents, assign OKRs, and enforce compliance brief',ownerRole:'Operations Lead + Channel Onboarding Specialist',assignee:'TBD',startDate:'2026-07-15',endDate:'2026-07-24',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'10 active compliant agents',deps:'T033,T031',notes:'',risk:'Bypass and field chaos'},
+  {taskId:'T035',phase:'Phase 1A',workstream:'Supply + Verification',title:'Reach 20 pipeline and 14 Green by July 31',ownerRole:'Operations Lead + Venture Onboarding Associate + Property Verification Specialist',assignee:'TBD',startDate:'2026-07-01',endDate:'2026-07-31',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'20 pipeline / 14 Green',deps:'T028',notes:'',risk:'Phase 1B has weak inventory'},
+  {taskId:'T036',phase:'Phase 1A',workstream:'Demand',title:'Reach 30 qualified buyers and 15 discovery calls',ownerRole:'Buyer Success Manager',assignee:'TBD',startDate:'2026-07-01',endDate:'2026-07-31',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'30 qualified / 15 calls',deps:'T030',notes:'',risk:'Soft launch demand side remains unproven'},
+  {taskId:'T037',phase:'Phase 1A',workstream:'People',title:'Hire Marketing / Content for Aug 1 start',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-07-15',endDate:'2026-08-01',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Marketing owner onboarded',deps:'T010,T022',notes:'',risk:'August readiness and Oct campaign suffer'},
+  {taskId:'T038',phase:'Phase 1B',workstream:'Support',title:'Build support system, templates, FAQ base, and SLA rules',ownerRole:'Operations Lead',assignee:'TBD',startDate:'2026-08-01',endDate:'2026-08-07',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Support playbook live',deps:'T024,T013',notes:'',risk:'Post-shortlist chaos in soft launch'},
+  {taskId:'T039',phase:'Phase 1B',workstream:'Marketing',title:'Produce explainer video and core launch assets',ownerRole:'Marketing / Content + Vendor',assignee:'TBD',startDate:'2026-08-08',endDate:'2026-08-24',actualDate:'',priority:'Medium',status:'Not Started',progress:'0',milestone:'Explainer + asset pack ready',deps:'T037,T011',notes:'',risk:'Weak trust communication'},
+  {taskId:'T040',phase:'Phase 1B',workstream:'Readiness',title:'Run full dry run: clean deal, bypass attempt, seller breach',ownerRole:'Operations Lead',assignee:'TBD',startDate:'2026-08-15',endDate:'2026-08-21',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Dry run completed with gap log',deps:'T034,T035,T036,T038',notes:'',risk:'Unknown failures hit soft launch'},
+  {taskId:'T041',phase:'Phase 1B',workstream:'Readiness',title:'Close all Critical gaps and assign all High gaps',ownerRole:'Operations Lead',assignee:'TBD',startDate:'2026-08-20',endDate:'2026-08-31',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Zero Critical gaps open',deps:'T040',notes:'',risk:'No credible September readiness'},
+  {taskId:'T042',phase:'Phase 1B',workstream:'Assets',title:'Shoot 14 Decision Kits for Green properties',ownerRole:'Property Verification Specialist + Vendor',assignee:'TBD',startDate:'2026-08-01',endDate:'2026-08-31',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'14 complete kits',deps:'T035,T021',notes:'',risk:'Weak buyer conversion during comparison stage'},
+  {taskId:'T043',phase:'Phase 1B',workstream:'Marketing',title:'Build Diwali / October campaign and schedule assets',ownerRole:'Marketing / Content',assignee:'TBD',startDate:'2026-08-20',endDate:'2026-08-31',actualDate:'',priority:'Medium',status:'Not Started',progress:'0',milestone:'Campaign ready to schedule',deps:'T037,T039',notes:'',risk:'October launch lacks GTM punch'},
+  {taskId:'T044',phase:'Phase 1B',workstream:'Readiness',title:'Close all High gaps by Sep 7',ownerRole:'CEO + Core Team',assignee:'TBD',startDate:'2026-09-01',endDate:'2026-09-07',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Zero High gaps open',deps:'T041',notes:'',risk:'Soft launch starts with known holes'},
+  {taskId:'T045',phase:'Phase 1B',workstream:'Soft Launch',title:'Run 1-week soft launch on 5 properties and 10 buyers',ownerRole:'CEO + Core Team',assignee:'TBD',startDate:'2026-09-08',endDate:'2026-09-21',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Soft launch pass/fail report',deps:'T044,T042',notes:'',risk:'October launch remains unproven'},
+  {taskId:'T046',phase:'Phase 1B',workstream:'Governance',title:'Freeze process v1.0 after soft launch review',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-09-15',endDate:'2026-09-23',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Process freeze memo issued',deps:'T045',notes:'',risk:'Team keeps improvising'},
+  {taskId:'T047',phase:'Phase 1B',workstream:'Supply',title:'Sign 2 more developer MoUs (target total 5)',ownerRole:'CEO',assignee:'Praveen',startDate:'2026-09-01',endDate:'2026-09-15',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'5 total MoUs live',deps:'T018',notes:'',risk:'Supply concentration risk at launch'},
+  {taskId:'T048',phase:'Phase 1B',workstream:'Launch Control',title:'Collect 6 launch sign-offs',ownerRole:'CEO + Operations Lead + CA + Title Documentation Partner',assignee:'TBD',startDate:'2026-09-22',endDate:'2026-09-28',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'All sign-offs collected',deps:'T045,T046',notes:'',risk:'No-go gate not formally passed'},
+  {taskId:'T049',phase:'Phase 1B',workstream:'Briefing',title:'Run all-hands launch briefing and agent briefing',ownerRole:'CEO + Channel Onboarding Specialist',assignee:'Praveen',startDate:'2026-09-24',endDate:'2026-09-29',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Everyone knows launch-day role',deps:'T048',notes:'',risk:'Launch-day confusion'},
+  {taskId:'T050',phase:'Launch',workstream:'Go-Live',title:'Execute October 1 launch-day protocol',ownerRole:'CEO + Operations Lead',assignee:'TBD',startDate:'2026-10-01',endDate:'2026-10-01',actualDate:'',priority:'High',status:'Not Started',progress:'0',milestone:'Serious selling begins',deps:'T049',notes:'',risk:'Missed launch window'}
+];
+
+const RISKS = [
+  {id:'R1',title:'CEO overload delays critical path',likelihood:'High',impact:'High',owner:'CEO',mitigation:'Keep scope narrow; hire on time; run weekly war room',trigger:'March-April tasks slip by >7 days',contingency:'Defer noncritical work; use external support selectively'},
+  {id:'R2',title:'Supply shortfall: not enough MoUs / Green properties',likelihood:'High',impact:'High',owner:'CEO / Operations Lead',mitigation:'3 MoUs by May end; 14 Green by July target',trigger:'<5 Green by May end or <10 Green by July',contingency:'Delay expansion; focus only on primary corridors'},
+  {id:'R3',title:'Demand shortfall: weak qualified buyer pipeline',likelihood:'Medium',impact:'High',owner:'Buyer Success Manager',mitigation:'Start test channels early; use CA/referral and controlled GTM',trigger:'<15 qualified buyers by July mid',contingency:'Fix scripts, channel mix, and qualification criteria'},
+  {id:'R4',title:'Token / payment SOP conflict creates legal and trust damage',likelihood:'Medium',impact:'Very High',owner:'CEO + Legal + CA',mitigation:'Freeze one final SOP and retire old drafts',trigger:'Any live conversation shows contradictory payment steps',contingency:'Stop live token movement until corrected'},
+  {id:'R5',title:'Agent bypass / off-platform behavior',likelihood:'Medium',impact:'High',owner:'Operations Lead',mitigation:'Certification gate, OTP/Gate Pass logs, enforcement ladder',trigger:'Unlogged meetings or contact leakage attempts',contingency:'Suspend agent, audit trail, clawback / penalties'},
+  {id:'R6',title:'Operations Lead role overload becomes a bottleneck',likelihood:'High',impact:'High',owner:'CEO',mitigation:'Use workload checks and role split triggers',trigger:'SLA misses repeat for 2 consecutive weeks',contingency:'Add verification support or coordinator sooner'},
+  {id:'R7',title:'Legal panel SLA breaks',likelihood:'Medium',impact:'High',owner:'Title Documentation Partner',mitigation:'Two-lawyer panel, ranked queue, weekly legal review',trigger:'Backlog >10 files or >72h response breach',contingency:'Route high-priority files to second panel lawyer'},
+  {id:'R8',title:'Vendor delays Decision Kits or explainer video',likelihood:'Medium',impact:'Medium',owner:'Marketing / Operations Lead',mitigation:'Book early; keep approval windows tight',trigger:'2 missed delivery dates',contingency:'Switch vendor or reduce asset scope temporarily'},
+  {id:'R9',title:'Website / form / tool chain is not stable',likelihood:'Medium',impact:'High',owner:'CEO / Operations Lead',mitigation:'End-to-end testing before campaigns',trigger:'Form failures or missing lead logs',contingency:'Use temporary manual fallback tracker immediately'}
+];
+
+// ==================== STATE ====================
+let tasks = [];
+let editingId = null;
+let sortField = 'taskId';
+let sortAsc = true;
+let currentWeekStart = null;
+let currentMonth = new Date(2026, 2, 1);
+let webAppUrl = '';
+
+// ==================== CONNECTION ====================
+function loadUrl() {
+  webAppUrl = localStorage.getItem('blute_webapp_url') || '';
+  if (webAppUrl) {
+    document.getElementById('webAppUrl').value = webAppUrl;
+    document.getElementById('seedBtn').disabled = false;
+    setConn('loading', 'Connecting…');
+    fetchAllTasks();
+  } else {
+    setConn('', 'Not connected');
+    tasks = JSON.parse(localStorage.getItem('blute_tasks_local') || 'null') || SEED.map(t => ({...t, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()}));
+    renderDashboard();
+    renderTasks();
+  }
+}
+
+function setConn(state, label) {
+  const dot = document.getElementById('connDot');
+  dot.className = 'conn-dot' + (state ? ' ' + state : '');
+  document.getElementById('connLabel').textContent = label;
+}
+
+async function callSheet(params) {
+  if (!webAppUrl) throw new Error('No Web App URL configured');
+  const url = webAppUrl + '?action=' + params.action;
+  const res = await fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(params),
+    headers: {'Content-Type': 'text/plain'}
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Unknown error');
+  return json;
+}
+
+async function fetchAllTasks() {
+  showLoading('Loading tasks from Google Sheets…');
+  try {
+    const result = await callSheet({ action: 'getAll' });
+    tasks = result.tasks.map(t => ({ ...t, progress: parseInt(t.progress) || 0 }));
+    if (tasks.length === 0) {
+      tasks = SEED.map(t => ({...t, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()}));
+    }
+    setConn('connected', 'Connected · ' + tasks.length + ' tasks');
+    saveLocal();
+    renderDashboard();
+    renderTasks();
+    showToast('Synced from Google Sheets ✓');
+  } catch(e) {
+    setConn('error', 'Connection failed');
+    // fallback to local
+    tasks = JSON.parse(localStorage.getItem('blute_tasks_local') || 'null') || SEED.map(t => ({...t, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()}));
+    renderDashboard();
+    renderTasks();
+    showToast('⚠ Using local cache — ' + e.message);
+  }
+  hideLoading();
+}
+
+async function syncNow() {
+  if (!webAppUrl) { showToast('Connect to Google Sheets first (⚙ Setup)'); return; }
+  await fetchAllTasks();
+}
+
+function saveLocal() {
+  localStorage.setItem('blute_tasks_local', JSON.stringify(tasks));
+}
+
+async function saveAndConnect() {
+  const url = document.getElementById('webAppUrl').value.trim();
+  if (!url || !url.includes('script.google.com')) {
+    document.getElementById('setupStatus').textContent = '⚠ Please enter a valid Google Apps Script Web App URL';
+    return;
+  }
+  webAppUrl = url;
+  localStorage.setItem('blute_webapp_url', url);
+  document.getElementById('seedBtn').disabled = false;
+  document.getElementById('setupStatus').textContent = 'URL saved. Testing connection…';
+  await testConnection();
+}
+
+async function testConnection() {
+  if (!webAppUrl) { document.getElementById('setupStatus').textContent = '⚠ No URL saved yet.'; return; }
+  setConn('loading', 'Testing…');
+  try {
+    const result = await callSheet({ action: 'getAll' });
+    setConn('connected', 'Connected · ' + result.tasks.length + ' tasks');
+    document.getElementById('setupStatus').innerHTML = '✅ Connection successful! Found <strong>' + result.tasks.length + '</strong> tasks in your sheet.';
+    if (result.tasks.length > 0) {
+      tasks = result.tasks.map(t => ({...t, progress: parseInt(t.progress)||0}));
+      saveLocal();
+    }
+  } catch(e) {
+    setConn('error', 'Failed');
+    document.getElementById('setupStatus').textContent = '❌ Error: ' + e.message + '. Check your Web App URL and make sure access is set to "Anyone".';
+  }
+}
+
+async function seedToSheets() {
+  if (!confirm('This will write all 50 tasks to your Google Sheet. Continue?')) return;
+  showLoading('Seeding 50 tasks to Google Sheets…');
+  try {
+    const now = new Date().toISOString();
+    const seeded = SEED.map(t => ({...t, createdAt: now, updatedAt: now}));
+    await callSheet({ action: 'bulkSeed', tasks: seeded });
+    tasks = seeded;
+    saveLocal();
+    setConn('connected', 'Connected · ' + tasks.length + ' tasks');
+    document.getElementById('setupStatus').textContent = '✅ All 50 tasks seeded to your Google Sheet!';
+    showToast('50 tasks seeded ✓');
+    renderDashboard();
+    renderTasks();
+  } catch(e) {
+    showToast('❌ Seed failed: ' + e.message);
+  }
+  hideLoading();
+}
+
+function clearUrl() {
+  if (!confirm('Disconnect from Google Sheets?')) return;
+  webAppUrl = '';
+  localStorage.removeItem('blute_webapp_url');
+  setConn('', 'Not connected');
+  document.getElementById('webAppUrl').value = '';
+  document.getElementById('seedBtn').disabled = true;
+  document.getElementById('setupStatus').textContent = 'Disconnected. Data saved locally.';
+}
+
+// ==================== PAGES ====================
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'tasks') renderTasks();
+  if (name === 'weekly') renderWeekly();
+  if (name === 'monthly') renderMonthly();
+  if (name === 'risks') renderRisks();
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const total = tasks.length;
+  const high = tasks.filter(t => t.priority === 'High').length;
+  const medium = tasks.filter(t => t.priority === 'Medium').length;
+  const low = tasks.filter(t => t.priority === 'Low').length;
+  const done = tasks.filter(t => t.status === 'Completed' || t.status === 'Done').length;
+  const inprog = tasks.filter(t => t.status === 'In Progress').length;
+  const today = new Date().toISOString().split('T')[0];
+  const overdue = tasks.filter(t => t.endDate < today && t.status !== 'Completed' && t.status !== 'Done').length;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card total"><div class="stat-num">${total}</div><div class="stat-label">Total Tasks</div></div>
+    <div class="stat-card high"><div class="stat-num" style="color:var(--high)">${high}</div><div class="stat-label">High Priority</div></div>
+    <div class="stat-card medium"><div class="stat-num" style="color:var(--medium)">${medium}</div><div class="stat-label">Medium Priority</div></div>
+    <div class="stat-card low"><div class="stat-num" style="color:var(--low)">${low}</div><div class="stat-label">Low Priority</div></div>
+    <div class="stat-card done"><div class="stat-num" style="color:var(--done)">${done}</div><div class="stat-label">Completed</div></div>
+    <div class="stat-card total"><div class="stat-num" style="color:var(--inprog)">${inprog}</div><div class="stat-label">In Progress</div></div>
+    <div class="stat-card overdue"><div class="stat-num" style="color:var(--high)">${overdue}</div><div class="stat-label">Overdue</div></div>
+    <div class="stat-card total"><div class="stat-num" style="color:var(--text2)">${total - done}</div><div class="stat-label">Not Completed</div></div>
+  `;
+
+  const months = ['Mar-2026','Apr-2026','May-2026','Jun-2026','Jul-2026','Aug-2026','Sep-2026','Oct-2026'];
+  const mp = {'Mar-2026':'2026-03','Apr-2026':'2026-04','May-2026':'2026-05','Jun-2026':'2026-06','Jul-2026':'2026-07','Aug-2026':'2026-08','Sep-2026':'2026-09','Oct-2026':'2026-10'};
+
+  document.getElementById('monthBreakdown').innerHTML = months.map(m => {
+    const prefix = mp[m];
+    const starting = tasks.filter(t => (t.startDate||'').startsWith(prefix)).length;
+    const ending = tasks.filter(t => (t.endDate||'').startsWith(prefix)).length;
+    const hiStart = tasks.filter(t => (t.startDate||'').startsWith(prefix) && t.priority === 'High').length;
+    const doneM = tasks.filter(t => (t.endDate||'').startsWith(prefix) && (t.status==='Completed'||t.status==='Done')).length;
+    const pct = ending > 0 ? Math.round(doneM/ending*100) : 0;
+    return `<div class="month-card">
+      <div class="month-name">${m}</div>
+      <div class="month-stat"><span>Tasks starting</span><span>${starting}</span></div>
+      <div class="month-stat"><span>Tasks ending</span><span>${ending}</span></div>
+      <div class="month-stat"><span>High priority starts</span><span style="color:var(--high)">${hiStart}</span></div>
+      <div class="month-stat"><span>Completed</span><span style="color:var(--done)">${doneM}/${ending}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+
+  const recent = [...tasks].sort((a,b) => (b.updatedAt||'').localeCompare(a.updatedAt||'')).slice(0,8);
+  document.getElementById('recentBadge').textContent = recent.length;
+  document.getElementById('recentTasks').innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead><tr>
+      ${['ID','Task','Priority','Status','Progress'].map(h=>`<th style="padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);text-align:left;color:var(--text2);font-size:11px;text-transform:uppercase;">${h}</th>`).join('')}
+    </tr></thead>
+    <tbody>${recent.map(t=>`<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:9px 12px;color:var(--text3);font-size:11px;">${t.taskId}</td>
+      <td style="padding:9px 12px;max-width:300px;color:var(--text);">${t.title.length>55?t.title.slice(0,55)+'…':t.title}</td>
+      <td style="padding:9px 12px;">${priorityBadge(t.priority)}</td>
+      <td style="padding:9px 12px;">${statusBadge(t.status)}</td>
+      <td style="padding:9px 12px;">
+        <div class="progress-track" style="width:80px;"><div class="progress-inner" style="width:${t.progress}%;background:${t.progress==100?'var(--done)':'var(--accent)'};"></div></div>
+        <span style="font-size:10px;color:var(--text2)">${t.progress}%</span>
+      </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+// ==================== TASKS ====================
+function priorityBadge(p) { return `<span class="badge-priority ${p}">${p}</span>`; }
+function statusBadge(s) { return `<span class="badge-status ${(s||'').replace(/\s+/g,'-')}">${s}</span>`; }
+
+function renderTasks() {
+  const search = (document.getElementById('searchBox')?.value||'').toLowerCase();
+  const fP = document.getElementById('filterPriority')?.value||'';
+  const fS = document.getElementById('filterStatus')?.value||'';
+  const fPh = document.getElementById('filterPhase')?.value||'';
+  const fM = document.getElementById('filterMonth')?.value||'';
+  const mp = {'Mar-2026':'2026-03','Apr-2026':'2026-04','May-2026':'2026-05','Jun-2026':'2026-06','Jul-2026':'2026-07','Aug-2026':'2026-08','Sep-2026':'2026-09','Oct-2026':'2026-10'};
+
+  let filtered = tasks.filter(t => {
+    if (search && !`${t.taskId} ${t.title} ${t.assignee} ${t.workstream} ${t.notes}`.toLowerCase().includes(search)) return false;
+    if (fP && t.priority !== fP) return false;
+    if (fS && t.status !== fS) return false;
+    if (fPh && t.phase !== fPh) return false;
+    if (fM) { const p = mp[fM]; if (!((t.startDate||'').startsWith(p)||(t.endDate||'').startsWith(p))) return false; }
+    return true;
+  });
+
+  filtered.sort((a,b) => {
+    let va = a[sortField]||'', vb = b[sortField]||'';
+    if (sortField==='progress'){va=Number(va);vb=Number(vb);}
+    return (va<vb?-1:va>vb?1:0) * (sortAsc?1:-1);
+  });
+
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('taskBody').innerHTML = filtered.map(t => {
+    const overdue = t.endDate < today && t.status !== 'Completed' && t.status !== 'Done';
+    const pc = t.progress==100?'var(--done)':t.progress>50?'var(--accent)':t.progress>0?'var(--medium)':'var(--surface3)';
+    return `<tr class="${overdue?'overdue-row':''}">
+      <td><span class="task-id">${t.taskId}</span></td>
+      <td><div class="task-title" title="${t.title}">${t.title.length>55?t.title.slice(0,55)+'…':t.title}</div><div class="task-phase">${t.workstream}</div></td>
+      <td><span class="task-phase">${t.phase}</span></td>
+      <td style="color:var(--text2);font-size:11px;">${t.assignee||'TBD'}</td>
+      <td>${priorityBadge(t.priority)}</td>
+      <td>${statusBadge(t.status)}</td>
+      <td style="color:var(--text2);font-size:11px;white-space:nowrap;">${t.startDate||'—'}</td>
+      <td style="color:${overdue?'var(--high)':'var(--text2)'};font-size:11px;white-space:nowrap;">${t.endDate||'—'}${overdue?' ⚠':''}</td>
+      <td style="color:var(--done);font-size:11px;white-space:nowrap;">${t.actualDate||'—'}</td>
+      <td class="progress-cell">
+        <div class="prog-val">${t.progress}%</div>
+        <div class="progress-track"><div class="progress-inner" style="width:${t.progress}%;background:${pc}"></div></div>
+      </td>
+      <td><button class="action-btn" onclick="openModal('${t.taskId}')">Edit</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('taskCount').textContent = `Showing ${filtered.length} of ${tasks.length} tasks`;
+}
+
+function sortBy(field) {
+  if (sortField===field) sortAsc=!sortAsc; else{sortField=field;sortAsc=true;}
+  renderTasks();
+}
+
+// ==================== MODAL ====================
+function openModal(taskId=null) {
+  editingId = taskId;
+  document.getElementById('deleteBtn').style.display = taskId ? 'inline-flex' : 'none';
+  document.getElementById('modalTitle').textContent = taskId ? 'Edit Task' : 'New Task';
+
+  if (taskId) {
+    const t = tasks.find(x => x.taskId === taskId);
+    if (!t) return;
+    document.getElementById('f_taskId').value = t.taskId;
+    document.getElementById('f_phase').value = t.phase;
+    document.getElementById('f_title').value = t.title;
+    document.getElementById('f_workstream').value = t.workstream||'';
+    document.getElementById('f_ownerRole').value = t.ownerRole||'';
+    document.getElementById('f_assignee').value = t.assignee||'';
+    document.getElementById('f_priority').value = t.priority;
+    document.getElementById('f_status').value = t.status;
+    document.getElementById('f_startDate').value = t.startDate||'';
+    document.getElementById('f_endDate').value = t.endDate||'';
+    document.getElementById('f_actualDate').value = t.actualDate||'';
+    document.getElementById('f_progress').value = t.progress||0;
+    document.getElementById('progressDisplay').textContent = (t.progress||0)+'%';
+    document.getElementById('f_milestone').value = t.milestone||'';
+    document.getElementById('f_deps').value = t.deps||'';
+    document.getElementById('f_notes').value = t.notes||'';
+    document.getElementById('f_risk').value = t.risk||'';
+  } else {
+    document.getElementById('f_taskId').value = 'T'+String(tasks.length+1).padStart(3,'0');
+    ['f_title','f_workstream','f_ownerRole','f_assignee','f_startDate','f_endDate','f_actualDate','f_milestone','f_deps','f_notes','f_risk'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('f_phase').value = 'Phase 0';
+    document.getElementById('f_priority').value = 'High';
+    document.getElementById('f_status').value = 'Not Started';
+    document.getElementById('f_progress').value = 0;
+    document.getElementById('progressDisplay').textContent = '0%';
+  }
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); editingId = null; }
+function closeOnOverlay(e) { if (e.target.id==='modalOverlay') closeModal(); }
+
+function updateProgressDisplay(v) {
+  document.getElementById('progressDisplay').textContent = v+'%';
+  const s = document.getElementById('f_status');
+  if (v==100 && s.value!=='Completed') s.value='Completed';
+  else if (v>0 && v<100 && s.value==='Not Started') s.value='In Progress';
+}
+
+async function saveTask() {
+  const title = document.getElementById('f_title').value.trim();
+  if (!title) { showToast('Task title is required'); return; }
+
+  const data = {
+    taskId: document.getElementById('f_taskId').value.trim(),
+    phase: document.getElementById('f_phase').value,
+    title,
+    workstream: document.getElementById('f_workstream').value.trim(),
+    ownerRole: document.getElementById('f_ownerRole').value.trim(),
+    assignee: document.getElementById('f_assignee').value.trim(),
+    priority: document.getElementById('f_priority').value,
+    status: document.getElementById('f_status').value,
+    startDate: document.getElementById('f_startDate').value,
+    endDate: document.getElementById('f_endDate').value,
+    actualDate: document.getElementById('f_actualDate').value,
+    progress: parseInt(document.getElementById('f_progress').value)||0,
+    milestone: document.getElementById('f_milestone').value.trim(),
+    deps: document.getElementById('f_deps').value.trim(),
+    notes: document.getElementById('f_notes').value.trim(),
+    risk: document.getElementById('f_risk').value.trim(),
+    updatedAt: new Date().toISOString()
+  };
+
+  if (editingId) {
+    const idx = tasks.findIndex(t => t.taskId === editingId);
+    if (idx >= 0) tasks[idx] = {...tasks[idx], ...data};
+  } else {
+    data.createdAt = new Date().toISOString();
+    tasks.push(data);
+  }
+
+  saveLocal();
+  closeModal();
+  renderTasks();
+  renderDashboard();
+
+  // async save to sheets
+  if (webAppUrl) {
+    showLoading('Saving to Google Sheets…');
+    try {
+      await callSheet({ action: 'save', task: data });
+      showToast('Saved to Google Sheets ✓');
+    } catch(e) {
+      showToast('⚠ Saved locally, sheet sync failed: ' + e.message);
+    }
+    hideLoading();
+  } else {
+    showToast(editingId ? 'Task updated (local) ✓' : 'Task created (local) ✓');
+  }
+}
+
+async function deleteTask() {
+  if (!editingId || !confirm('Delete this task?')) return;
+  tasks = tasks.filter(t => t.taskId !== editingId);
+  const deletedId = editingId;
+  saveLocal();
+  closeModal();
+  renderTasks();
+  renderDashboard();
+
+  if (webAppUrl) {
+    showLoading('Deleting from Google Sheets…');
+    try {
+      await callSheet({ action: 'delete', taskId: deletedId });
+      showToast('Deleted from Google Sheets ✓');
+    } catch(e) {
+      showToast('⚠ Deleted locally, sheet sync failed: ' + e.message);
+    }
+    hideLoading();
+  } else {
+    showToast('Task deleted ✓');
+  }
+}
+
+// ==================== WEEKLY ====================
+function getWeekStart(date) {
+  const d = new Date(date); const day = d.getDay();
+  d.setDate(d.getDate() - day + (day===0?-6:1)); d.setHours(0,0,0,0); return d;
+}
+
+function renderWeekly() {
+  if (!currentWeekStart) currentWeekStart = getWeekStart(new Date());
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const today = new Date(); today.setHours(0,0,0,0);
+  const weekDays = days.map((d,i) => { const dt = new Date(currentWeekStart); dt.setDate(dt.getDate()+i); return dt; });
+  document.getElementById('weekLabel').textContent = weekDays[0].toLocaleDateString('en-IN',{day:'numeric',month:'short'}) + ' – ' + weekDays[6].toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('weekCols').innerHTML = weekDays.map((date,i) => {
+    const ds = date.toISOString().split('T')[0];
+    const isToday = date.getTime()===today.getTime();
+    const dt = tasks.filter(t => t.startDate<=ds && t.endDate>=ds);
+    return `<div class="day-col${isToday?' today':''}">
+      <div class="day-name">${days[i]}</div><div class="day-date">${date.getDate()}</div>
+      ${dt.map(t=>`<div class="day-task ${t.priority.toLowerCase()}" onclick="openModal('${t.taskId}')" title="${t.title}">${t.title.length>28?t.title.slice(0,28)+'…':t.title}</div>`).join('')||'<div style="font-size:10px;color:var(--text3)">—</div>'}
+    </div>`;
+  }).join('');
+}
+
+function prevWeek(){currentWeekStart.setDate(currentWeekStart.getDate()-7);renderWeekly();}
+function nextWeek(){currentWeekStart.setDate(currentWeekStart.getDate()+7);renderWeekly();}
+function goToday(){currentWeekStart=getWeekStart(new Date());renderWeekly();}
+
+// ==================== MONTHLY ====================
+function renderMonthly() {
+  const year=currentMonth.getFullYear(), month=currentMonth.getMonth();
+  document.getElementById('monthLabel').textContent = currentMonth.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+  const firstDay=new Date(year,month,1), lastDay=new Date(year,month+1,0);
+  let sd=firstDay.getDay(); sd=sd===0?6:sd-1;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  let html=days.map(d=>`<div class="cal-header">${d}</div>`).join('');
+  for(let i=0;i<sd;i++) html+=`<div class="cal-day other-month"></div>`;
+  for(let d=1;d<=lastDay.getDate();d++){
+    const date=new Date(year,month,d); date.setHours(0,0,0,0);
+    const ds=date.toISOString().split('T')[0];
+    const isToday=date.getTime()===today.getTime();
+    const dt=tasks.filter(t=>t.startDate===ds||t.endDate===ds);
+    html+=`<div class="cal-day${isToday?' today':''}">
+      <div class="cal-day-num">${d}</div>
+      ${dt.slice(0,3).map(t=>`<div class="cal-task-dot" onclick="openModal('${t.taskId}')" title="${t.title}"><div class="dot ${t.priority.toLowerCase()}"></div><span>${t.taskId}</span></div>`).join('')}
+      ${dt.length>3?`<div style="font-size:9px;color:var(--text3)">+${dt.length-3} more</div>`:''}
+    </div>`;
+  }
+  const rem=(7-(sd+lastDay.getDate())%7)%7;
+  for(let i=0;i<rem;i++) html+=`<div class="cal-day other-month"></div>`;
+  document.getElementById('calGrid').innerHTML=html;
+}
+
+function prevMonth(){currentMonth.setMonth(currentMonth.getMonth()-1);renderMonthly();}
+function nextMonth(){currentMonth.setMonth(currentMonth.getMonth()+1);renderMonthly();}
+
+// ==================== RISKS ====================
+function renderRisks() {
+  const lc={High:'var(--high)',Medium:'var(--medium)',Low:'var(--low)','Very High':'#ff2e2e'};
+  document.getElementById('riskList').innerHTML = RISKS.map(r=>`
+    <div class="risk-card">
+      <div class="risk-header">
+        <span class="risk-id">${r.id}</span>
+        <span class="risk-title">${r.title}</span>
+        <span class="badge-priority" style="background:${lc[r.likelihood]}15;color:${lc[r.likelihood]};border:1px solid ${lc[r.likelihood]}30">${r.likelihood} / ${r.impact}</span>
+      </div>
+      <div class="risk-body">
+        <div style="margin-bottom:4px;"><strong style="color:var(--text)">Owner:</strong> ${r.owner}</div>
+        <div style="margin-bottom:4px;"><strong style="color:var(--text)">Mitigation:</strong> ${r.mitigation}</div>
+        <div style="margin-bottom:4px;"><strong style="color:var(--text)">Early Warning:</strong> ${r.trigger}</div>
+        <div><strong style="color:var(--text)">Contingency:</strong> ${r.contingency}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ==================== EXPORT ====================
+function exportCSV() {
+  const h=['Task ID','Phase','Workstream','Title','Owner Role','Assignee','Priority','Status','Start Date','End Date','Actual Date','Progress %','Milestone','Dependencies','Notes','Risk if Late'];
+  const rows=tasks.map(t=>[t.taskId,t.phase,t.workstream,`"${(t.title||'').replace(/"/g,'""')}"`,t.ownerRole,t.assignee,t.priority,t.status,t.startDate,t.endDate,t.actualDate,t.progress,`"${(t.milestone||'').replace(/"/g,'""')}"`,t.deps,`"${(t.notes||'').replace(/"/g,'""')}"`,`"${(t.risk||'').replace(/"/g,'""')}"`]);
+  download('blute_tasks.csv',[h.join(','),...rows.map(r=>r.join(','))].join('\n'),'text/csv');
+  showToast('CSV exported ✓');
+}
+function exportJSON() { download('blute_tasks.json',JSON.stringify(tasks,null,2),'application/json'); showToast('JSON exported ✓'); }
+function download(name,content,type) {
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([content],{type})),download:name});
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ==================== LOADING / TOAST ====================
+function showLoading(msg) {
+  document.getElementById('loadingMsg').textContent = msg||'Loading…';
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+function showToast(msg) {
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ==================== INIT ====================
+loadUrl();
+renderRisks();
+</script>
+</body>
+</html>
