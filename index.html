@@ -581,22 +581,17 @@ let sortField = 'taskId';
 let sortAsc = true;
 let currentWeekStart = null;
 let currentMonth = new Date(2026, 2, 1);
-let webAppUrl = '';
+// ⬇ Your Google Apps Script Web App URL — hardcoded so any browser connects automatically
+let webAppUrl = 'https://script.google.com/macros/s/AKfycbyZFjiK_17VFjEMpxgq3219Xo6zje3AJX_eJ3V6nrv7XWhwPFwvU1qz6EnE00Hd8oi0/exec';
 
 // ==================== CONNECTION ====================
 function loadUrl() {
-  webAppUrl = localStorage.getItem('blute_webapp_url') || '';
-  if (webAppUrl) {
-    document.getElementById('webAppUrl').value = webAppUrl;
-    document.getElementById('seedBtn').disabled = false;
-    setConn('loading', 'Connecting…');
-    fetchAllTasks();
-  } else {
-    setConn('', 'Not connected');
-    tasks = JSON.parse(localStorage.getItem('blute_tasks_local') || 'null') || SEED.map(t => ({...t, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()}));
-    renderDashboard();
-    renderTasks();
-  }
+  // Always use hardcoded URL — works on any browser, any device, no setup needed
+  document.getElementById('webAppUrl').value = webAppUrl;
+  document.getElementById('seedBtn').disabled = false;
+  localStorage.setItem('blute_webapp_url', webAppUrl);
+  setConn('loading', 'Connecting…');
+  fetchAllTasks();
 }
 
 function setConn(state, label) {
